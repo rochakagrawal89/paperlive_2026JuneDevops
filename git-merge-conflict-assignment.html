@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git Merge Conflict – Hands-On Demo Assignment</title>
+<style>
+  :root {
+    --c-bg: #f7f6f2;
+    --c-surface: #ffffff;
+    --c-border: #e2e0d8;
+    --c-border-strong: #c8c6bc;
+    --c-text: #1c1b18;
+    --c-text-muted: #5f5e5a;
+    --c-text-hint: #888780;
+    --c-purple-50: #EEEDFE;
+    --c-purple-200: #AFA9EC;
+    --c-purple-600: #534AB7;
+    --c-purple-800: #3C3489;
+    --c-teal-50: #E1F5EE;
+    --c-teal-200: #5DCAA5;
+    --c-teal-600: #0F6E56;
+    --c-teal-800: #085041;
+    --c-coral-50: #FAECE7;
+    --c-coral-200: #F0997B;
+    --c-coral-600: #993C1D;
+    --c-coral-800: #712B13;
+    --c-amber-50: #FAEEDA;
+    --c-amber-200: #FAC775;
+    --c-amber-600: #854F0B;
+    --c-green-50: #EAF3DE;
+    --c-green-600: #3B6D11;
+    --c-red-50: #FCEBEB;
+    --c-red-600: #A32D2D;
+    --c-gray-100: #D3D1C7;
+    --c-gray-600: #5F5E5A;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --mono: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --c-bg: #1a1917;
+      --c-surface: #232220;
+      --c-border: #38362f;
+      --c-border-strong: #504e45;
+      --c-text: #ede9df;
+      --c-text-muted: #a8a59c;
+      --c-text-hint: #6b6962;
+      --c-purple-50: #26215C;
+      --c-purple-200: #7F77DD;
+      --c-purple-600: #AFA9EC;
+      --c-purple-800: #CECBF6;
+      --c-teal-50: #04342C;
+      --c-teal-200: #1D9E75;
+      --c-teal-600: #5DCAA5;
+      --c-teal-800: #9FE1CB;
+      --c-coral-50: #4A1B0C;
+      --c-coral-200: #D85A30;
+      --c-coral-600: #F0997B;
+      --c-coral-800: #F5C4B3;
+      --c-amber-50: #412402;
+      --c-amber-200: #BA7517;
+      --c-amber-600: #FAC775;
+      --c-green-50: #173404;
+      --c-green-600: #97C459;
+      --c-red-50: #501313;
+      --c-red-600: #F09595;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .doc-header {
+    border-bottom: 1.5px solid var(--c-border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .doc-header .eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-purple-600);
+    margin-bottom: 0.5rem;
+  }
+
+  .doc-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--c-text);
+    margin-bottom: 0.75rem;
+  }
+
+  .doc-header .subtitle {
+    font-size: 15px;
+    color: var(--c-text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 0.5px solid var(--c-border-strong);
+    color: var(--c-text-muted);
+    background: var(--c-surface);
+  }
+
+  .meta-pill .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c-purple-600);
+  }
+
+  /* Overview cards row */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 2.5rem;
+  }
+
+  .ov-card {
+    background: var(--c-surface);
+    border: 0.5px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.1rem;
+  }
+
+  .ov-card .label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--c-text-hint);
+    margin-bottom: 4px;
+  }
+
+  .ov-card .value {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--c-text);
+  }
+
+  /* Objective box */
+  .objective-box {
+    background: var(--c-purple-50);
+    border-left: 3px solid var(--c-purple-600);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .objective-box .box-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--c-purple-600);
+    margin-bottom: 6px;
+  }
+
+  .objective-box p {
+    color: var(--c-text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Section heading */
+  .section-heading {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--c-text-hint);
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 6px;
+    border-bottom: 0.5px solid var(--c-border);
+  }
+
+  /* Step card */
+  .step-card {
+    background: var(--c-surface);
+    border: 0.5px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .step-header:hover {
+    background: var(--c-bg);
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 1px;
+  }
+
+  .num-purple { background: var(--c-purple-50); color: var(--c-purple-600); }
+  .num-teal   { background: var(--c-teal-50);   color: var(--c-teal-600);   }
+  .num-coral  { background: var(--c-coral-50);   color: var(--c-coral-600);  }
+  .num-amber  { background: var(--c-amber-50);   color: var(--c-amber-600);  }
+
+  .step-meta {
+    flex: 1;
+  }
+
+  .step-tag {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--c-text-hint);
+    margin-bottom: 2px;
+  }
+
+  .step-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--c-text);
+    line-height: 1.3;
+  }
+
+  .step-desc {
+    font-size: 13px;
+    color: var(--c-text-muted);
+    margin-top: 2px;
+  }
+
+  .step-toggle {
+    font-size: 18px;
+    color: var(--c-text-hint);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .step-body {
+    border-top: 0.5px solid var(--c-border);
+    padding: 1.25rem 1.25rem 1.25rem 4rem;
+    display: none;
+  }
+
+  .step-card.open .step-body {
+    display: block;
+  }
+
+  .step-card.open .step-toggle {
+    transform: rotate(90deg);
+  }
+
+  /* Sub-steps */
+  .substep {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  .substep:last-child { margin-bottom: 0; }
+
+  .substep-num {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--c-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--c-text-muted);
+    margin-top: 1px;
+  }
+
+  .substep-content { flex: 1; }
+
+  .substep-content .action {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--c-text);
+    margin-bottom: 6px;
+  }
+
+  .substep-content .explanation {
+    font-size: 13px;
+    color: var(--c-text-muted);
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #1e1d1b;
+    border-radius: var(--radius);
+    padding: 0.85rem 1rem;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+
+  .code-block .prompt {
+    color: #5DCAA5;
+    user-select: none;
+  }
+
+  .code-block .cmd {
+    color: #e8e4da;
+  }
+
+  .code-block .comment {
+    color: #6b6962;
+    font-style: italic;
+  }
+
+  .code-block .conflict-mine {
+    color: #AFA9EC;
+  }
+
+  .code-block .conflict-sep {
+    color: #888780;
+  }
+
+  .code-block .conflict-theirs {
+    color: #F0997B;
+  }
+
+  .code-block .conflict-resolved {
+    color: #97C459;
+  }
+
+  .code-block .output {
+    color: #a8a59c;
+  }
+
+  .code-block .filename {
+    color: #FAC775;
+  }
+
+  /* Callout */
+  .callout {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    margin: 10px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .callout-tip {
+    background: var(--c-teal-50);
+    border: 0.5px solid var(--c-teal-200);
+    color: var(--c-teal-800);
+  }
+
+  .callout-warn {
+    background: var(--c-amber-50);
+    border: 0.5px solid var(--c-amber-200);
+    color: var(--c-amber-600);
+  }
+
+  .callout-info {
+    background: var(--c-purple-50);
+    border: 0.5px solid var(--c-purple-200);
+    color: var(--c-purple-800);
+  }
+
+  .callout-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* File illustration */
+  .file-block {
+    background: #1e1d1b;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 8px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .file-block .file-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #2c2b28;
+    border-bottom: 0.5px solid #38362f;
+    font-size: 12px;
+    color: #FAC775;
+  }
+
+  .file-block .file-content {
+    padding: 10px 14px;
+    line-height: 1.65;
+  }
+
+  /* Verdict / checkpoint */
+  .checkpoint {
+    background: var(--c-green-50);
+    border: 0.5px solid var(--c-green-600);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--c-green-600);
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .checkpoint-icon { font-size: 16px; flex-shrink: 0; }
+
+  /* Branch diagram */
+  .branch-diagram {
+    background: var(--c-bg);
+    border: 0.5px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin: 10px 0;
+    overflow-x: auto;
+  }
+
+  .branch-diagram pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--c-text-muted);
+    white-space: pre;
+    line-height: 1.8;
+  }
+
+  .bd-main   { color: #AFA9EC; }
+  .bd-feat   { color: #5DCAA5; }
+  .bd-commit { color: #FAC775; }
+  .bd-merge  { color: #F0997B; }
+
+  /* Learning outcomes */
+  .outcome-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .outcome-list li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 0.5px solid var(--c-border);
+    font-size: 14px;
+    color: var(--c-text);
+  }
+
+  .outcome-list li:last-child { border-bottom: none; }
+
+  .outcome-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--c-purple-50);
+    color: var(--c-purple-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Footer */
+  .doc-footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 0.5px solid var(--c-border);
+    font-size: 12px;
+    color: var(--c-text-hint);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; padding: 0; }
+    .step-body { display: block !important; }
+    .step-toggle { display: none; }
+    .step-header { cursor: default; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div class="eyebrow">Git Training · Hands-On Assignment</div>
+    <h1>Resolving a Git Merge Conflict</h1>
+    <p class="subtitle">A guided, step-by-step lab that walks you through creating, identifying, and resolving a real merge conflict — with explanation of every concept along the way.</p>
+    <div class="meta-row">
+      <span class="meta-pill"><span class="dot"></span>Difficulty: Intermediate</span>
+      <span class="meta-pill"><span class="dot" style="background:var(--c-teal-600)"></span>Duration: 45–60 min</span>
+      <span class="meta-pill"><span class="dot" style="background:var(--c-amber-600)"></span>Prereq: Git basics, branching</span>
+      <span class="meta-pill"><span class="dot" style="background:var(--c-coral-600)"></span>Tool: Terminal + any text editor</span>
+    </div>
+  </div>
+
+  <!-- Overview cards -->
+  <div class="overview-grid">
+    <div class="ov-card">
+      <div class="label">Phases</div>
+      <div class="value">4 stages</div>
+    </div>
+    <div class="ov-card">
+      <div class="label">Total Steps</div>
+      <div class="value">18 sub-steps</div>
+    </div>
+    <div class="ov-card">
+      <div class="label">Skills covered</div>
+      <div class="value">Create · Detect · Resolve · Verify</div>
+    </div>
+    <div class="ov-card">
+      <div class="label">Bonus challenge</div>
+      <div class="value">VS Code merge editor</div>
+    </div>
+  </div>
+
+  <!-- Objective -->
+  <div class="objective-box">
+    <div class="box-title">Learning objective</div>
+    <p>By the end of this assignment you will be able to explain why merge conflicts happen, identify conflict markers in a file, and confidently resolve conflicts using both the command line and a visual editor — skills you will use every time two developers edit the same part of a file.</p>
+  </div>
+
+  <!-- What is a merge conflict -->
+  <div class="section-heading">Background concept</div>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">💡</span>
+    <div>
+      A <strong>merge conflict</strong> occurs when two branches have changed the <em>same lines</em> in the same file and Git cannot automatically decide which version to keep. Git pauses the merge and asks you — the developer — to make the call. This is a normal, expected part of collaborative development.
+    </div>
+  </div>
+
+  <div class="branch-diagram">
+    <pre id="branch-ascii"></pre>
+  </div>
+
+  <!-- Steps section -->
+  <div class="section-heading">Assignment steps — click any step to expand</div>
+
+  <!-- Phase 1 -->
+  <div class="step-card open" id="step1">
+    <div class="step-header" onclick="toggle('step1')">
+      <div class="step-num num-purple">1</div>
+      <div class="step-meta">
+        <div class="step-tag">Phase 1 · Setup</div>
+        <div class="step-title">Create and initialise the project repository</div>
+        <div class="step-desc">Set up a fresh Git repo with an initial commit to give branches a common ancestor.</div>
+      </div>
+      <div class="step-toggle">›</div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <div class="substep-num">1a</div>
+        <div class="substep-content">
+          <div class="action">Create a working directory and initialise Git</div>
+          <div class="explanation">We start with a completely empty project so you can see every commit that leads to the conflict.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">mkdir git-conflict-lab && cd git-conflict-lab</span><br>
+            <span class="prompt">$ </span><span class="cmd">git init</span><br>
+            <span class="output">Initialized empty Git repository in .../git-conflict-lab/.git/</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">1b</div>
+        <div class="substep-content">
+          <div class="action">Create the shared file and make the first commit</div>
+          <div class="explanation">This is the <em>common ancestor</em> commit. Both branches will start from here. The conflict arises because each branch edits the same line after this point.</div>
+          <div class="file-block">
+            <div class="file-header">📄 app.py</div>
+            <div class="file-content">
+              <span class="output">greeting = "Hello, World!"<br>print(greeting)</span>
+            </div>
+          </div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">echo 'greeting = "Hello, World!"' > app.py</span><br>
+            <span class="prompt">$ </span><span class="cmd">echo 'print(greeting)' >> app.py</span><br>
+            <span class="prompt">$ </span><span class="cmd">git add app.py</span><br>
+            <span class="prompt">$ </span><span class="cmd">git commit -m "initial: add greeting script"</span><br>
+            <span class="output">[main (root-commit) a1b2c3d] initial: add greeting script</span>
+          </div>
+          <div class="checkpoint">
+            <span class="checkpoint-icon">✓</span>
+            <span>Run <code>git log --oneline</code>. You should see exactly one commit labelled "initial: add greeting script".</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="step-card" id="step2">
+    <div class="step-header" onclick="toggle('step2')">
+      <div class="step-num num-teal">2</div>
+      <div class="step-meta">
+        <div class="step-tag">Phase 2 · Diverge</div>
+        <div class="step-title">Create two branches that edit the same line</div>
+        <div class="step-desc">Simulate two developers working on different changes to the same file simultaneously.</div>
+      </div>
+      <div class="step-toggle">›</div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <div class="substep-num">2a</div>
+        <div class="substep-content">
+          <div class="action">Create branch <code>feature/alice</code> and change the greeting</div>
+          <div class="explanation">Alice is adding a personalised greeting. She checks out a new branch from <code>main</code> and edits line 1.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git checkout -b feature/alice</span><br>
+            <span class="output">Switched to a new branch 'feature/alice'</span>
+          </div>
+          <div class="explanation" style="margin-top:8px;">Now open <code>app.py</code> in your editor and change line 1 to:</div>
+          <div class="file-block">
+            <div class="file-header">📄 app.py (after Alice's edit)</div>
+            <div class="file-content">
+              <span class="conflict-mine">greeting = "Hello from Alice!"</span><br>
+              <span class="output">print(greeting)</span>
+            </div>
+          </div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git add app.py</span><br>
+            <span class="prompt">$ </span><span class="cmd">git commit -m "feat: personalise greeting for Alice"</span><br>
+            <span class="output">[feature/alice d4e5f6a] feat: personalise greeting for Alice</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">2b</div>
+        <div class="substep-content">
+          <div class="action">Switch back to <code>main</code> and create branch <code>feature/bob</code></div>
+          <div class="explanation">We switch back to <code>main</code> first — this ensures Bob's branch is based on the <em>original</em> file, not Alice's changes.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git checkout main</span><br>
+            <span class="output">Switched to branch 'main'</span><br>
+            <span class="prompt">$ </span><span class="cmd">git checkout -b feature/bob</span><br>
+            <span class="output">Switched to a new branch 'feature/bob'</span>
+          </div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">💬</span>
+            <div>Open <code>app.py</code> right now and confirm you still see <code>"Hello, World!"</code> — that proves Bob is starting from the same base as Alice.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">2c</div>
+        <div class="substep-content">
+          <div class="action">Make Bob's change on the same line and commit</div>
+          <div class="explanation">Bob also changes line 1, but with a different string. This is the exact setup that will cause a conflict when we try to merge both branches into <code>main</code>.</div>
+          <div class="file-block">
+            <div class="file-header">📄 app.py (after Bob's edit)</div>
+            <div class="file-content">
+              <span class="conflict-theirs">greeting = "Hello from Bob!"</span><br>
+              <span class="output">print(greeting)</span>
+            </div>
+          </div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git add app.py</span><br>
+            <span class="prompt">$ </span><span class="cmd">git commit -m "feat: personalise greeting for Bob"</span><br>
+            <span class="output">[feature/bob 7g8h9i0] feat: personalise greeting for Bob</span>
+          </div>
+          <div class="checkpoint">
+            <span class="checkpoint-icon">✓</span>
+            <span>Run <code>git log --oneline --all --graph</code>. You should see three commits: the initial one plus one commit on each branch, both forking from <code>main</code>.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="step-card" id="step3">
+    <div class="step-header" onclick="toggle('step3')">
+      <div class="step-num num-coral">3</div>
+      <div class="step-meta">
+        <div class="step-tag">Phase 3 · Conflict</div>
+        <div class="step-title">Trigger the merge conflict and understand what Git is telling you</div>
+        <div class="step-desc">Merge both branches into main and read every part of the conflict output.</div>
+      </div>
+      <div class="step-toggle">›</div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <div class="substep-num">3a</div>
+        <div class="substep-content">
+          <div class="action">Merge Alice's branch into <code>main</code> — this succeeds cleanly</div>
+          <div class="explanation">The first merge always succeeds because there is nothing to conflict with; Alice's branch is simply ahead of <code>main</code> at this point (fast-forward).</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git checkout main</span><br>
+            <span class="prompt">$ </span><span class="cmd">git merge feature/alice</span><br>
+            <span class="output">Updating a1b2c3d..d4e5f6a<br>Fast-forward<br> app.py | 2 +-<br> 1 file changed, 1 insertion(+), 1 deletion(-)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">3b</div>
+        <div class="substep-content">
+          <div class="action">Merge Bob's branch into <code>main</code> — this produces a conflict</div>
+          <div class="explanation">Now <code>main</code> already contains Alice's version of line 1. Bob's branch also changes line 1. Git cannot decide which version to keep — so it stops and asks you.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git merge feature/bob</span><br>
+            <span class="output">Auto-merging app.py<br><span style="color:#E24B4A">CONFLICT (content): Merge conflict in app.py<br>Automatic merge failed; fix conflicts and then commit the result.</span></span>
+          </div>
+          <div class="callout callout-warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Do not panic. Git has not broken anything. Your repository is in a <strong>MERGING</strong> state — all changes are preserved and safe. Git is simply waiting for your decision.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">3c</div>
+        <div class="substep-content">
+          <div class="action">Inspect the current state with <code>git status</code></div>
+          <div class="explanation">Before editing anything, read what Git is telling you. The output clearly identifies which files have conflicts and what actions are available.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git status</span><br>
+            <span class="output">On branch main<br>You have unmerged paths.<br>  (fix conflicts and run "git commit")<br>  (use "git merge --abort" to abort the merge)<br><br>Unmerged paths:<br>  (use "git add &lt;file&gt;..." to mark resolution)<br>	<span style="color:#E24B4A">both modified:   app.py</span><br><br>no changes added to commit (use "git add" and/or "git commit -a")</span>
+          </div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">💡</span>
+            <div>"both modified" is Git's way of saying: both branches touched this file at the same location. You can always run <code>git merge --abort</code> to completely undo the merge attempt and return to the pre-merge state.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">3d</div>
+        <div class="substep-content">
+          <div class="action">Open <code>app.py</code> and read the conflict markers</div>
+          <div class="explanation">Git has rewritten <code>app.py</code> with special markers to show you exactly what both sides changed. You need to understand each part before editing.</div>
+          <div class="file-block">
+            <div class="file-header">📄 app.py (with conflict markers)</div>
+            <div class="file-content">
+              <span class="conflict-mine">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span><br>
+              <span class="conflict-mine">greeting = "Hello from Alice!"</span><br>
+              <span class="conflict-sep">=======</span><br>
+              <span class="conflict-theirs">greeting = "Hello from Bob!"</span><br>
+              <span class="conflict-theirs">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/bob</span><br>
+              <span class="output">print(greeting)</span>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <table style="width:100%; font-size:13px; border-collapse:collapse;">
+              <tr>
+                <td style="padding:6px 8px; border:0.5px solid var(--c-border); color:var(--c-purple-600); font-family:var(--mono); white-space:nowrap;">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</td>
+                <td style="padding:6px 8px; border:0.5px solid var(--c-border); color:var(--c-text-muted);">Start of <strong>your</strong> current branch's version (main, now containing Alice's change)</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 8px; border:0.5px solid var(--c-border); color:var(--c-gray-600); font-family:var(--mono);">=======</td>
+                <td style="padding:6px 8px; border:0.5px solid var(--c-border); color:var(--c-text-muted);">The dividing line between the two conflicting versions</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 8px; border:0.5px solid var(--c-border); color:var(--c-coral-600); font-family:var(--mono); white-space:nowrap;">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/bob</td>
+                <td style="padding:6px 8px; border:0.5px solid var(--c-border); color:var(--c-text-muted);">Start of the <strong>incoming</strong> branch's version (Bob's change)</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="step-card" id="step4">
+    <div class="step-header" onclick="toggle('step4')">
+      <div class="step-num num-amber">4</div>
+      <div class="step-meta">
+        <div class="step-tag">Phase 4 · Resolution</div>
+        <div class="step-title">Resolve the conflict, stage the fix, and complete the merge</div>
+        <div class="step-desc">Edit the file to produce the final agreed-upon version, then finish the merge commit.</div>
+      </div>
+      <div class="step-toggle">›</div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <div class="substep-num">4a</div>
+        <div class="substep-content">
+          <div class="action">Decide on the resolution strategy</div>
+          <div class="explanation">You have three common options. Each is valid in different real-world situations. For this lab, use option C (combine both).</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin:8px 0;">
+            <div class="callout callout-info" style="flex-direction:column; gap:4px;">
+              <strong>Option A</strong><br>Keep your branch (HEAD). Delete Bob's lines entirely.
+            </div>
+            <div class="callout callout-info" style="flex-direction:column; gap:4px;">
+              <strong>Option B</strong><br>Keep incoming (theirs). Delete Alice's lines entirely.
+            </div>
+            <div class="callout callout-tip" style="flex-direction:column; gap:4px;">
+              <strong>Option C ✓</strong><br>Merge both changes into a single new line.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">4b</div>
+        <div class="substep-content">
+          <div class="action">Edit <code>app.py</code> — remove all conflict markers and write the resolved version</div>
+          <div class="explanation">Open the file in your editor. Delete every line that starts with <code>&lt;&lt;&lt;</code>, <code>===</code>, or <code>&gt;&gt;&gt;</code>. Write the final version you want committed. The file must compile/run correctly with no leftover markers.</div>
+          <div class="file-block">
+            <div class="file-header">📄 app.py (resolved — no markers remain)</div>
+            <div class="file-content">
+              <span class="conflict-resolved">greeting = "Hello from Alice and Bob!"</span><br>
+              <span class="output">print(greeting)</span>
+            </div>
+          </div>
+          <div class="callout callout-warn">
+            <span class="callout-icon">⚠️</span>
+            <div>The most common mistake is leaving a <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> or <code>=======</code> line in the file accidentally. Always do a search for <code>&lt;&lt;&lt;</code> in your editor before staging.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">4c</div>
+        <div class="substep-content">
+          <div class="action">Stage the resolved file with <code>git add</code></div>
+          <div class="explanation">Adding a conflicted file is how you signal to Git that you have resolved it. This is different from a regular add — it marks the conflict as settled.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git add app.py</span>
+          </div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">💡</span>
+            <div>Run <code>git status</code> again now. Notice the file has moved from "Unmerged paths" to "Changes to be committed". That means Git accepts your resolution.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">4d</div>
+        <div class="substep-content">
+          <div class="action">Complete the merge by running <code>git commit</code></div>
+          <div class="explanation">Git will open your default editor pre-populated with a merge commit message. You can accept it as-is or customise it. This commit officially records that the two branches have been merged.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git commit</span><br>
+            <span class="comment"># editor opens with: "Merge branch 'feature/bob'"</span><br>
+            <span class="comment"># save and close the editor</span><br>
+            <span class="output">[main j1k2l3m] Merge branch 'feature/bob'</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">4e</div>
+        <div class="substep-content">
+          <div class="action">Verify the final state of the repository</div>
+          <div class="explanation">Run the graph log to see the complete picture: two branches forking from the initial commit, then converging at the merge commit on <code>main</code>.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git log --oneline --all --graph</span><br>
+            <span class="output">*   j1k2l3m (HEAD -> main) Merge branch 'feature/bob'<br>|\<br>| * 7g8h9i0 (feature/bob) feat: personalise greeting for Bob<br>* | d4e5f6a (feature/alice) feat: personalise greeting for Alice<br>|/<br>* a1b2c3d initial: add greeting script</span><br><br>
+            <span class="prompt">$ </span><span class="cmd">cat app.py</span><br>
+            <span class="conflict-resolved">greeting = "Hello from Alice and Bob!"</span><br>
+            <span class="output">print(greeting)</span>
+          </div>
+          <div class="checkpoint">
+            <span class="checkpoint-icon">✓</span>
+            <span>Your merge is complete. <code>git status</code> shows "nothing to commit, working tree clean" — the repo is in a healthy state.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bonus -->
+  <div class="section-heading">Bonus challenge</div>
+
+  <div class="step-card" id="step5">
+    <div class="step-header" onclick="toggle('step5')">
+      <div class="step-num num-purple">★</div>
+      <div class="step-meta">
+        <div class="step-tag">Optional · Visual editor</div>
+        <div class="step-title">Repeat the exercise using VS Code's merge editor</div>
+        <div class="step-desc">VS Code has a built-in three-pane conflict UI — learn to use it for production workflows.</div>
+      </div>
+      <div class="step-toggle">›</div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <div class="substep-num">★a</div>
+        <div class="substep-content">
+          <div class="action">Set VS Code as your default Git editor and merge tool</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git config --global core.editor "code --wait"</span><br>
+            <span class="prompt">$ </span><span class="cmd">git config --global merge.tool vscode</span><br>
+            <span class="prompt">$ </span><span class="cmd">git config --global mergetool.vscode.cmd 'code --wait $MERGED'</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">★b</div>
+        <div class="substep-content">
+          <div class="action">Re-create the conflict from scratch and open the merge editor</div>
+          <div class="explanation">Repeat phases 1–3 in a fresh folder, then instead of manually editing the conflict markers, open VS Code. It will show you inline buttons: "Accept Current", "Accept Incoming", "Accept Both", or open the full three-pane merge editor.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git mergetool</span><br>
+            <span class="comment"># VS Code opens with the three-pane view</span>
+          </div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">💡</span>
+            <div>In VS Code, look for the "Resolve in Merge Editor" button at the top of the conflicted file. The three-pane view shows: <strong>Ours</strong> (left) | <strong>Result</strong> (centre) | <strong>Theirs</strong> (right). Click checkboxes to accept individual hunks.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-num">★c</div>
+        <div class="substep-content">
+          <div class="action">Intentionally conflict three files at once and practice resolving them in sequence</div>
+          <div class="explanation">Real-world merges often affect multiple files. Create <code>config.py</code>, <code>utils.py</code>, and <code>app.py</code>, then have both branches edit all three files. Run the merge, then resolve each file one by one, staging each before moving to the next.</div>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">git status</span><br>
+            <span class="comment"># identify all files marked "both modified"</span><br>
+            <span class="prompt">$ </span><span class="cmd">git add config.py</span><span class="comment">  # resolve one, stage it</span><br>
+            <span class="prompt">$ </span><span class="cmd">git add utils.py</span><span class="comment">   # then the next</span><br>
+            <span class="prompt">$ </span><span class="cmd">git add app.py</span><span class="comment">    # then the last</span><br>
+            <span class="prompt">$ </span><span class="cmd">git commit</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Discussion questions -->
+  <div class="section-heading">Discussion &amp; reflection questions</div>
+
+  <div style="background: var(--c-surface); border:0.5px solid var(--c-border); border-radius:var(--radius-lg); padding:1.25rem;">
+    <ul class="outcome-list">
+      <li>
+        <span class="outcome-icon">Q</span>
+        <span>What would have happened if you had committed the file with conflict markers still inside it? How would you detect and fix that mistake?</span>
+      </li>
+      <li>
+        <span class="outcome-icon">Q</span>
+        <span>Why did the first merge (<code>feature/alice</code>) succeed as a fast-forward but the second merge (<code>feature/bob</code>) caused a conflict?</span>
+      </li>
+      <li>
+        <span class="outcome-icon">Q</span>
+        <span>In what situations would you choose "Accept Theirs" entirely rather than combining both versions? Who on your team should make that call?</span>
+      </li>
+      <li>
+        <span class="outcome-icon">Q</span>
+        <span>How can smaller, more frequent merges (short-lived branches) reduce the frequency and severity of conflicts on a team?</span>
+      </li>
+      <li>
+        <span class="outcome-icon">Q</span>
+        <span>What is <code>git merge --abort</code> and when would you use it? Can you use it after you have already staged resolved files?</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Learning outcomes -->
+  <div class="section-heading">Expected learning outcomes</div>
+
+  <div style="background: var(--c-surface); border:0.5px solid var(--c-border); border-radius:var(--radius-lg); padding:1.25rem;">
+    <ul class="outcome-list">
+      <li><span class="outcome-icon">✓</span><span>Explain what causes a merge conflict and why Git cannot resolve it automatically</span></li>
+      <li><span class="outcome-icon">✓</span><span>Read and interpret the three sections of a conflict marker block (<code>&lt;&lt;&lt;</code>, <code>===</code>, <code>&gt;&gt;&gt;</code>)</span></li>
+      <li><span class="outcome-icon">✓</span><span>Resolve a conflict manually by editing the file to produce the correct final version</span></li>
+      <li><span class="outcome-icon">✓</span><span>Use <code>git add</code> to signal resolution and <code>git commit</code> to complete the merge</span></li>
+      <li><span class="outcome-icon">✓</span><span>Verify the repository history with <code>git log --oneline --all --graph</code></span></li>
+      <li><span class="outcome-icon">✓</span><span>Use VS Code's merge editor as an alternative to manual marker editing (bonus)</span></li>
+    </ul>
+  </div>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <span>Git Training · Hands-On Assignment</span>
+    <span>45–60 min · Intermediate</span>
+  </div>
+
+</div>
+
+<script>
+  function toggle(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('open');
+  }
+
+  document.getElementById('branch-ascii').innerHTML =
+    '<span class="bd-commit">●</span><span style="color:var(--c-text-muted)"> a1b2c3d  initial commit  ← common ancestor</span>\n' +
+    '<span style="color:var(--c-text-muted)">|\\\n' +
+    '| </span><span class="bd-commit">\\</span>\n' +
+    '<span class="bd-feat">●</span><span style="color:var(--c-text-muted)"> | d4e5f6a  "Hello from Alice!"  (feature/alice → merged into main)</span>\n' +
+    '<span style="color:var(--c-text-muted)">| </span><span class="bd-merge">●</span><span style="color:var(--c-text-muted)"> 7g8h9i0  "Hello from Bob!"   (feature/bob)</span>\n' +
+    '<span style="color:var(--c-text-muted)"> \\ |</span>\n' +
+    '  <span class="bd-merge">●</span><span style="color:var(--c-text-muted)"> j1k2l3m  Merge commit  ← you resolve the conflict here  (main)</span>';
+</script>
+</body>
+</html>
